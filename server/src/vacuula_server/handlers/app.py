@@ -258,6 +258,7 @@ def post_robot_command(req: RouterHandler, serial: str) -> None:
     elif (conn.gen == Generation.GEN3) and isinstance(conn.conn, Gen2Gen3Conn):
         # gen3
         req_id, msg = build_command(serial, data)
+        slot.conn = conn
         pending_requests[str(req_id)] = slot
         logger.debug("Sending command to robot %s: %s", serial, data)
         try:
