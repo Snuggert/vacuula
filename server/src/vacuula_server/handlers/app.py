@@ -262,7 +262,8 @@ def post_robot_command(req: RouterHandler, serial: str) -> None:
         pending_requests[str(req_id)] = slot
         logger.debug("Sending command to robot %s: %s", serial, data)
         try:
-            send_chunk(conn.conn.wfile, msg) # TODO
+            with conn.conn.write_lock:
+                send_chunk(conn.conn.wfile, msg)
         except Exception:
             pending_requests.pop(str(req_id), None)
             _send_quietly(lambda: req.send_error_response(502, "Failed to send command to robot"))
