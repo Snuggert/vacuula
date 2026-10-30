@@ -3,7 +3,7 @@ import logging
 import socket
 from vacuula_server.gen3.commands import send_chunk, build_heartbeat
 from vacuula_server.state import robot_connections, abort_pending_requests
-from vacuula_server.env import GEN3_TCP_USER_TIMEOUT_S
+from vacuula_server.env import GEN3_TCP_USER_TIMEOUT_S, GEN3_SOCKET_TIMEOUT_S
 from vacuula_server.handlers.events import notify_robots_changed
 from vacuula_server.gen3.utils import get_robot_serial
 from vacuula_server.db import get_session
@@ -30,7 +30,7 @@ def nucleo_init(req: RouterHandler) -> None:
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     if hasattr(socket, "TCP_USER_TIMEOUT"):
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, GEN3_TCP_USER_TIMEOUT_S * 1000)
-    sock.settimeout(60)
+    sock.settimeout(GEN3_SOCKET_TIMEOUT_S)
 
     req.send_response(200)
     req.send_header("Transfer-Encoding", "chunked")

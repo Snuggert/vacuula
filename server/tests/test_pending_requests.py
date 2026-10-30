@@ -1,8 +1,16 @@
-import unittest
 import json
-from vacuula_server.state import PendingRequest, pending_requests, abort_pending_requests
-from vacuula_server.conn import RobotConn, Gen2Gen3Conn
+import unittest
+from concurrent.futures import ThreadPoolExecutor
+
+from vacuula_server.conn import Gen2Gen3Conn, RobotConn
+from vacuula_server.env import GEN3_SOCKET_TIMEOUT_S
+from vacuula_server.gen3.commands import build_command
 from vacuula_server.generation import Generation
+from vacuula_server.state import (
+    PendingRequest,
+    abort_pending_requests,
+    pending_requests,
+)
 
 class TestPendingRequests(unittest.TestCase):
     def setUp(self):
@@ -65,6 +73,27 @@ class TestPendingRequests(unittest.TestCase):
         aborted = abort_pending_requests(conn, status=503)
         self.assertEqual(aborted, 0)
         self.assertEqual(s.status, 200)
+
+    def test_gen2gen3_conn_write_lock(self):
+        conn = Gen2Gen3Conn("pass", None)
+        self.assertTrue(hasattr(conn, "write_lock"))
+        # Verify it can be acquired and released
+        with conn.write_lock:
+            pass
+
+    def test_concurrent_build_command_req_ids(self):
+        def _call_build(idx):
+            return build_command("NONEXISTENT", {"cmd": "test", "i": idx})[0]
+
+        with ThreadPoolExecutor(max_workers=10) as ex:
+            req_ids = list(ex.map(_call_build, range(100)))
+
+        self.assertEqual(len(req_ids), 100)
+        self.assertEqual(len(set(req_ids)), 100)
+
+    def test_gen3_socket_timeout_env(self):
+        self.assertGreaterEqual(GEN3_SOCKET_TIMEOUT_S, 10)
+        self.assertLessEqual(GEN3_SOCKET_TIMEOUT_S, 1800)
 
 if __name__ == "__main__":
     unittest.main()
