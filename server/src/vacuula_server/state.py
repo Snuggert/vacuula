@@ -16,7 +16,7 @@ client_connections = []
 
 
 class PendingRequest:
-    __slots__ = ("event", "content", "status", "conn")
+    __slots__ = ("conn", "content", "event", "status")
 
     def __init__(self):
         self.event = threading.Event()
